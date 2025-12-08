@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-
+import 'country_guide.dart';
+import 'voice_translator.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -52,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Navigate to Login Screen after 3 seconds
+    // Navigate to Login Screen after 7 seconds
     Future.delayed(const Duration(seconds: 7), () {
       if (mounted) {
         Navigator.pushReplacement(
@@ -320,6 +321,17 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const HistoryScreen()),
+                );
+              },
+            ),
+ListTile(
+              leading: const Icon(Icons.public), 
+              title: const Text('Country Guide'),
+              onTap: () {
+                Navigator.pop(context); // Closes the menu
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CountryGuideScreen()),
                 );
               },
             ),
