@@ -367,7 +367,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: selectedLanguage,
+                    initialValue: selectedLanguage,
                     decoration: const InputDecoration(
                       labelText: 'Select Language',
                       border: OutlineInputBorder(),
@@ -554,7 +554,7 @@ class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
                         // FROM Currency
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: fromCurrency,
+                            initialValue: fromCurrency,
                             decoration: const InputDecoration(
                               labelText: 'From',
                               border: OutlineInputBorder(),
@@ -579,7 +579,7 @@ class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
                         // TO Currency
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: toCurrency,
+                            initialValue: toCurrency,
                             decoration: const InputDecoration(
                               labelText: 'To',
                               border: OutlineInputBorder(),
