@@ -1,14 +1,23 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; // <--- New Import
+import 'package:flutter/material.dart';
 import 'dart:async';
 import 'country_guide.dart';
 import 'voice_translator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// ... imports
+
 void main() async {
-  // These two lines turn on the Firebase connection
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: "AIzaSyDpHATJd_9izCvoMpAUdsz5PJobo6czPdA", // From "current_key"
+      appId: "1:128101786156:android:b213e02093a9e61633a789", // From "mobilesdk_app_id"
+      messagingSenderId: "128101786156", // From "project_number"
+      projectId: "globelingo-21142", // From "project_id"
+    ),
+  );
   
   runApp(const MyApp());
 }
@@ -24,7 +33,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 // --- SPLASH SCREEN ---
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -434,7 +442,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: selectedLanguage,
+                    initialValue: selectedLanguage,
                     decoration: const InputDecoration(
                       labelText: 'Select Language',
                       border: OutlineInputBorder(),
@@ -596,7 +604,7 @@ class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: fromCurrency,
+                            initialValue: fromCurrency,
                             decoration: const InputDecoration(labelText: 'From', border: OutlineInputBorder()),
                             items: exchangeRates.keys.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
                             onChanged: (v) { setState(() { fromCurrency = v!; convertCurrency(); }); },
@@ -607,7 +615,7 @@ class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: toCurrency,
+                            initialValue: toCurrency,
                             decoration: const InputDecoration(labelText: 'To', border: OutlineInputBorder()),
                             items: exchangeRates.keys.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
                             onChanged: (v) { setState(() { toCurrency = v!; convertCurrency(); }); },
