@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; // <--- New Import
 import 'dart:async';
-import 'country_guide.dart';       // Importing your Country Guide
-import 'voice_translator.dart';    // Importing your Voice Feature
+import 'country_guide.dart';
+import 'voice_translator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+void main() async {
+  // These two lines turn on the Firebase connection
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  
   runApp(const MyApp());
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -167,8 +172,7 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
-
-// --- LOGIN SCREEN ---
+// --- LOGIN SCREEN (REAL AUTHENTICATION) ---
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -178,14 +182,58 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool isLogin = true;
+  bool isLoading = false;
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  void handleAuth() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const HomePage()),
-    );
+  Future<void> handleAuth() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in all fields")),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      if (isLogin) {
+        // Log in existing user
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } else {
+        // Create new user
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      }
+      
+      // If successful, navigate to Home
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      // Show error message (like "Wrong password" or "Email in use")
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? "Authentication failed"), 
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -223,21 +271,23 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: handleAuth,
+                onPressed: isLoading ? null : handleAuth,
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: Text(
-                  isLogin ? 'Login' : 'Sign Up',
-                  style: const TextStyle(fontSize: 16),
-                ),
+                child: isLoading 
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : Text(
+                      isLogin ? 'Login' : 'Sign Up',
+                      style: const TextStyle(fontSize: 16),
+                    ),
               ),
             ),
             const SizedBox(height: 16),
             TextButton(
-              onPressed: () {
+              onPressed: isLoading ? null : () {
                 setState(() {
                   isLogin = !isLogin;
                 });

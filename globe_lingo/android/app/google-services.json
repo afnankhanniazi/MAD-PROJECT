@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "128101786156",
+    "project_id": "globelingo-21142",
+    "storage_bucket": "globelingo-21142.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:128101786156:android:b213e02093a9e61633a789",
+        "android_client_info": {
+          "package_name": "com.example.globe_lingo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpHATJd_9izCvoMpAUdsz5PJobo6czPdA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
