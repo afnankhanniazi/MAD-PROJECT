@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'country_guide.dart';
 import 'voice_translator.dart';
+import 'world_time.dart';
+import 'currency_converter.dart';
+import 'emergency_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // ... imports
@@ -312,16 +315,171 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
-// --- HOME PAGE WITH MENU ---
-class HomePage extends StatefulWidget {
+// --- NEW DASHBOARD (HOME PAGE) ---
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // We use ExtendBodyBehindAppBar to make the gradient cover the top status bar
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text("GlobeLingo Hub", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent, // See-through AppBar
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.indigo),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(Icons.language, size: 50, color: Colors.white),
+                  SizedBox(height: 10),
+                  Text("GlobeLingo Menu", style: TextStyle(color: Colors.white, fontSize: 24)),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        // THEME: Same Gradient as Splash Screen
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).primaryColor,
+              Theme.of(context).primaryColor.withOpacity(0.8),
+              Colors.blue.shade300,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Welcome Back!",
+                  style: TextStyle(
+                    fontSize: 28, 
+                    fontWeight: FontWeight.bold, 
+                    color: Colors.white
+                  ),
+                ),
+                const Text(
+                  "What would you like to do?",
+                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                ),
+                const SizedBox(height: 30),
+                
+                // --- THE FEATURE GRID ---
+                Expanded(
+                  child: GridView.count(
+                    crossAxisCount: 2, // 2 Columns
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15,
+                    children: [
+                      // 1. Translator
+                      _buildMenuCard(context, "Translator", Icons.translate, Colors.orange, const TranslatorScreen()),
+                      
+                      // 2. Voice Chat
+                      _buildMenuCard(context, "Voice Chat", Icons.mic, Colors.red, const VoiceTranslatorScreen()),
+                      
+                      // 3. Country Info
+                      _buildMenuCard(context, "Country Info", Icons.public, Colors.green, const CountryGuideScreen()),
+                      
+                      // 4. World Time
+                      _buildMenuCard(context, "World Time", Icons.access_time, Colors.purple, const WorldTimeScreen()),
+                      
+                      // 5. Currency
+                      _buildMenuCard(context, "Currency", Icons.currency_exchange, Colors.teal, const CurrencyScreen()),
+                      
+                      // 6. EMERGENCY HELPER (New Unique Feature!)
+                      _buildMenuCard(context, "Emergency", Icons.health_and_safety, Colors.redAccent, const EmergencyHelperScreen()),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Helper function to build the beautiful buttons
+  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color, Widget nextPage) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => nextPage));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            )
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: color.withOpacity(0.1),
+              child: Icon(icon, size: 30, color: color),
+            ),
+            const SizedBox(height: 15),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16, 
+                fontWeight: FontWeight.bold,
+                color: Colors.black87
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _HomePageState extends State<HomePage> {
+// --- NEW TRANSLATOR SCREEN (Moved from old Home Page) ---
+class TranslatorScreen extends StatefulWidget {
+  const TranslatorScreen({super.key});
+
+  @override
+  State<TranslatorScreen> createState() => _TranslatorScreenState();
+}
+
+class _TranslatorScreenState extends State<TranslatorScreen> {
   final inputController = TextEditingController();
   String translatedText = "";
   String selectedLanguage = 'es';
@@ -338,7 +496,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> translateText() async {
     if (inputController.text.isEmpty) return;
     setState(() => isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1)); // Simulating
     setState(() {
       translatedText = "Translated: ${inputController.text} (Simulation)";
       isLoading = false;
@@ -348,83 +506,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('GlobeLingo Translator'),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          children: [
-             DrawerHeader(
-              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
-              child: const Text(
-                'GlobeLingo Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.translate),
-              title: const Text('Translator'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.history),
-              title: const Text('Translation History'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HistoryScreen()),
-                );
-              },
-            ),
-            // --- NEW BUTTON: Country Guide ---
-            ListTile(
-              leading: const Icon(Icons.public), 
-              title: const Text('Country Guide'),
-              onTap: () {
-                Navigator.pop(context); 
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CountryGuideScreen()),
-                );
-              },
-            ),
-            // --- NEW BUTTON: Voice Conversation ---
-            ListTile(
-              leading: const Icon(Icons.mic), 
-              title: const Text('Voice Conversation'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const VoiceTranslatorScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.access_time),
-              title: const Text('Time & Currency'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const TimeAndCurrencyScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () {
-                 Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+      appBar: AppBar(title: const Text('Text Translator')),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -435,14 +517,14 @@ class _HomePageState extends State<HomePage> {
                 labelText: 'Enter text to translate',
                 border: OutlineInputBorder(),
               ),
-              maxLines: 3,
+              maxLines: 4,
             ),
             const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    initialValue: selectedLanguage,
+                    value: selectedLanguage,
                     decoration: const InputDecoration(
                       labelText: 'Select Language',
                       border: OutlineInputBorder(),
@@ -453,27 +535,18 @@ class _HomePageState extends State<HomePage> {
                         child: Text(entry.key),
                       );
                     }).toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => selectedLanguage = value);
-                      }
-                    },
+                    onChanged: (value) => setState(() => selectedLanguage = value!),
                   ),
                 ),
                 const SizedBox(width: 20),
-                ElevatedButton.icon(
+                ElevatedButton(
                   onPressed: isLoading ? null : translateText,
-                  icon: isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.translate),
-                  label: Text(isLoading ? 'Translating...' : 'Translate'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                    backgroundColor: Colors.indigo,
+                    foregroundColor: Colors.white,
                   ),
+                  child: isLoading ? const CircularProgressIndicator(color: Colors.white) : const Icon(Icons.translate),
                 ),
               ],
             ),
@@ -481,22 +554,13 @@ class _HomePageState extends State<HomePage> {
             if (translatedText.isNotEmpty)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(15),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: Colors.indigo.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.indigo.withOpacity(0.3)),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Translation:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(translatedText, style: const TextStyle(fontSize: 18)),
-                  ],
-                ),
+                child: Text(translatedText, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
               ),
           ],
         ),
@@ -504,145 +568,14 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+// --- KEEP THESE EXISTING SCREENS (Do not delete them if they are below) ---
+// If you deleted HistoryScreen or TimeAndCurrencyScreen, paste them back here.
+// I will include brief versions just in case you deleted too much.
 
-// --- PLACEHOLDER SCREENS ---
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Translation History')),
-      body: const Center(child: Text("History UI Coming Soon")),
-    );
-  }
-}
-
-// --- TIME & CURRENCY SCREEN ---
-class TimeAndCurrencyScreen extends StatefulWidget {
-  const TimeAndCurrencyScreen({super.key});
-
-  @override
-  State<TimeAndCurrencyScreen> createState() => _TimeAndCurrencyScreenState();
-}
-
-class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
-  final List<Map<String, String>> worldTimes = [
-    {'city': 'New York', 'time': '13:39 PM'},
-    {'city': 'London', 'time': '18:39 PM'},
-    {'city': 'Tokyo', 'time': '02:39 AM'},
-    {'city': 'Sydney', 'time': '03:39 AM'},
-    {'city': 'Dubai', 'time': '21:39 PM'},
-    {'city': 'Paris', 'time': '19:39 PM'},
-  ];
-
-  final Map<String, double> exchangeRates = {
-    'USD': 1.0,
-    'EUR': 0.92,
-    'GBP': 0.79,
-    'PKR': 279.50,
-    'INR': 83.12,
-  };
-
-  String fromCurrency = 'USD';
-  String toCurrency = 'EUR';
-  String amount = "1";
-  String result = "0.92";
-
-  void convertCurrency() {
-    double inputAmount = double.tryParse(amount) ?? 0.0;
-    double fromRate = exchangeRates[fromCurrency]!;
-    double toRate = exchangeRates[toCurrency]!;
-    double conversion = (inputAmount / fromRate) * toRate;
-    
-    setState(() {
-      result = conversion.toStringAsFixed(2);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Time & Currency')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('World Time', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Card(
-              elevation: 4,
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: worldTimes.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    leading: const Icon(Icons.access_time, color: Colors.indigo),
-                    title: Text(worldTimes[index]['city']!),
-                    subtitle: Text("Today, ${worldTimes[index]['time']}"),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 32),
-            const Text('Currency Converter', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    TextField(
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
-                      onChanged: (value) { amount = value; convertCurrency(); },
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: fromCurrency,
-                            decoration: const InputDecoration(labelText: 'From', border: OutlineInputBorder()),
-                            items: exchangeRates.keys.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
-                            onChanged: (v) { setState(() { fromCurrency = v!; convertCurrency(); }); },
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Icon(Icons.arrow_forward),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: toCurrency,
-                            decoration: const InputDecoration(labelText: 'To', border: OutlineInputBorder()),
-                            items: exchangeRates.keys.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
-                            onChanged: (v) { setState(() { toCurrency = v!; convertCurrency(); }); },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: Colors.indigo.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                      child: Column(
-                        children: [
-                          Text(result, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.indigo)),
-                          const SizedBox(height: 4),
-                          Text("$amount $fromCurrency = $result $toCurrency", style: const TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return Scaffold(appBar: AppBar(title: const Text("History")), body: const Center(child: Text("History List")));
   }
 }
