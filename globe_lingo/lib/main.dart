@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'country_guide.dart';
-import 'voice_translator.dart';
+import 'country_guide.dart';       // Importing your Country Guide
+import 'voice_translator.dart';    // Importing your Voice Feature
+
 void main() {
   runApp(const MyApp());
 }
@@ -53,8 +54,8 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Navigate to Login Screen after 7 seconds
-    Future.delayed(const Duration(seconds: 7), () {
+    // Navigate to Login Screen after 6 seconds
+    Future.delayed(const Duration(seconds: 6), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -253,7 +254,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-// --- HOME PAGE WITH SIDEBAR & TRANSLATOR UI ---
+
+// --- HOME PAGE WITH MENU ---
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -267,7 +269,6 @@ class _HomePageState extends State<HomePage> {
   String selectedLanguage = 'es';
   bool isLoading = false;
 
-  // List of languages for the dropdown
   final languageMap = {
     'Spanish': 'es',
     'French': 'fr',
@@ -276,15 +277,10 @@ class _HomePageState extends State<HomePage> {
     'Chinese': 'zh-cn',
   };
 
-  // Mock translation function for UI demonstration
   Future<void> translateText() async {
     if (inputController.text.isEmpty) return;
-    
     setState(() => isLoading = true);
-    
-    // Fake delay to simulate translation
     await Future.delayed(const Duration(seconds: 1));
-    
     setState(() {
       translatedText = "Translated: ${inputController.text} (Simulation)";
       isLoading = false;
@@ -297,7 +293,6 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('GlobeLingo Translator'),
       ),
-      // The Sidebar Menu (Drawer)
       drawer: Drawer(
         child: ListView(
           children: [
@@ -324,14 +319,27 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             ),
-ListTile(
+            // --- NEW BUTTON: Country Guide ---
+            ListTile(
               leading: const Icon(Icons.public), 
               title: const Text('Country Guide'),
               onTap: () {
-                Navigator.pop(context); // Closes the menu
+                Navigator.pop(context); 
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const CountryGuideScreen()),
+                );
+              },
+            ),
+            // --- NEW BUTTON: Voice Conversation ---
+            ListTile(
+              leading: const Icon(Icons.mic), 
+              title: const Text('Voice Conversation'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const VoiceTranslatorScreen()),
                 );
               },
             ),
@@ -363,7 +371,6 @@ ListTile(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Input Text Field
             TextField(
               controller: inputController,
               decoration: const InputDecoration(
@@ -373,13 +380,11 @@ ListTile(
               maxLines: 3,
             ),
             const SizedBox(height: 20),
-            
-            // Language Dropdown & Button Row
             Row(
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    initialValue: selectedLanguage,
+                    value: selectedLanguage,
                     decoration: const InputDecoration(
                       labelText: 'Select Language',
                       border: OutlineInputBorder(),
@@ -415,8 +420,6 @@ ListTile(
               ],
             ),
             const SizedBox(height: 30),
-            
-            // Output Area
             if (translatedText.isNotEmpty)
               Container(
                 width: double.infinity,
@@ -444,7 +447,7 @@ ListTile(
   }
 }
 
-// --- PLACEHOLDERS FOR OTHER SCREENS ---
+// --- PLACEHOLDER SCREENS ---
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
   @override
@@ -455,6 +458,7 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 }
+
 // --- TIME & CURRENCY SCREEN ---
 class TimeAndCurrencyScreen extends StatefulWidget {
   const TimeAndCurrencyScreen({super.key});
@@ -464,7 +468,6 @@ class TimeAndCurrencyScreen extends StatefulWidget {
 }
 
 class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
-  // Static data to simulate World Time without extra packages
   final List<Map<String, String>> worldTimes = [
     {'city': 'New York', 'time': '13:39 PM'},
     {'city': 'London', 'time': '18:39 PM'},
@@ -474,7 +477,6 @@ class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
     {'city': 'Paris', 'time': '19:39 PM'},
   ];
 
-  // Currency Converter Variables
   final Map<String, double> exchangeRates = {
     'USD': 1.0,
     'EUR': 0.92,
@@ -492,8 +494,6 @@ class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
     double inputAmount = double.tryParse(amount) ?? 0.0;
     double fromRate = exchangeRates[fromCurrency]!;
     double toRate = exchangeRates[toCurrency]!;
-    
-    // Logic: Convert to USD first, then to target currency
     double conversion = (inputAmount / fromRate) * toRate;
     
     setState(() {
@@ -510,16 +510,12 @@ class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- WORLD TIME SECTION ---
-            const Text(
-              'World Time',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            const Text('World Time', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Card(
               elevation: 4,
               child: ListView.builder(
-                shrinkWrap: true, // Important for nested lists
+                shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: worldTimes.length,
                 itemBuilder: (context, index) {
@@ -531,14 +527,8 @@ class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
                 },
               ),
             ),
-            
             const SizedBox(height: 32),
-
-            // --- CURRENCY CONVERTER SECTION ---
-            const Text(
-              'Currency Converter',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            const Text('Currency Converter', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             Card(
               elevation: 4,
@@ -546,97 +536,45 @@ class _TimeAndCurrencyScreenState extends State<TimeAndCurrencyScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Amount Input
                     TextField(
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Amount',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        amount = value;
-                        convertCurrency();
-                      },
+                      decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
+                      onChanged: (value) { amount = value; convertCurrency(); },
                     ),
                     const SizedBox(height: 16),
-                    
-                    // Dropdowns Row
                     Row(
                       children: [
-                        // FROM Currency
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            initialValue: fromCurrency,
-                            decoration: const InputDecoration(
-                              labelText: 'From',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: exchangeRates.keys.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                fromCurrency = newValue!;
-                                convertCurrency();
-                              });
-                            },
+                            value: fromCurrency,
+                            decoration: const InputDecoration(labelText: 'From', border: OutlineInputBorder()),
+                            items: exchangeRates.keys.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                            onChanged: (v) { setState(() { fromCurrency = v!; convertCurrency(); }); },
                           ),
                         ),
                         const SizedBox(width: 16),
                         const Icon(Icons.arrow_forward),
                         const SizedBox(width: 16),
-                        // TO Currency
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            initialValue: toCurrency,
-                            decoration: const InputDecoration(
-                              labelText: 'To',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: exchangeRates.keys.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                toCurrency = newValue!;
-                                convertCurrency();
-                              });
-                            },
+                            value: toCurrency,
+                            decoration: const InputDecoration(labelText: 'To', border: OutlineInputBorder()),
+                            items: exchangeRates.keys.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+                            onChanged: (v) { setState(() { toCurrency = v!; convertCurrency(); }); },
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 24),
-                    
-                    // Result Display
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.indigo.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      decoration: BoxDecoration(color: Colors.indigo.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                       child: Column(
                         children: [
-                          Text(
-                            result,
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.indigo,
-                            ),
-                          ),
+                          Text(result, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.indigo)),
                           const SizedBox(height: 4),
-                          Text(
-                            "$amount $fromCurrency = $result $toCurrency",
-                            style: const TextStyle(color: Colors.grey),
-                          ),
+                          Text("$amount $fromCurrency = $result $toCurrency", style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ),
