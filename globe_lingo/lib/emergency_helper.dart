@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'emergency_data.dart'; // Importing the big list
 
 class EmergencyHelperScreen extends StatefulWidget {
   const EmergencyHelperScreen({super.key});
@@ -8,26 +9,25 @@ class EmergencyHelperScreen extends StatefulWidget {
 }
 
 class _EmergencyHelperScreenState extends State<EmergencyHelperScreen> {
-  // Static data for Emergency Numbers
-  final List<Map<String, String>> emergencyData = [
-    {'country': 'USA', 'police': '911', 'ambulance': '911', 'fire': '911'},
-    {'country': 'UK', 'police': '999', 'ambulance': '999', 'fire': '999'},
-    {'country': 'Pakistan', 'police': '15', 'ambulance': '1122', 'fire': '16'},
-    {'country': 'Europe (General)', 'police': '112', 'ambulance': '112', 'fire': '112'},
-    {'country': 'China', 'police': '110', 'ambulance': '120', 'fire': '119'},
-    {'country': 'Japan', 'police': '110', 'ambulance': '119', 'fire': '119'},
-  ];
-
-  Map<String, String> selectedCountry = {};
+  // We don't initialize it here anymore to avoid the crash
+  Map<String, String>? selectedCountry;
 
   @override
   void initState() {
     super.initState();
-    selectedCountry = emergencyData[0]; // Default to first country
+    // ERROR WAS HERE: We removed the .sort() line because the list is read-only.
+    
+    // Just pick the first country safely
+    if (globalEmergencyData.isNotEmpty) {
+      selectedCountry = globalEmergencyData[0];
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Safety check: If list is empty or something went wrong, show loading
+    if (selectedCountry == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Emergency Helper'),
@@ -52,7 +52,7 @@ class _EmergencyHelperScreenState extends State<EmergencyHelperScreen> {
                 child: DropdownButton<Map<String, String>>(
                   isExpanded: true,
                   value: selectedCountry,
-                  items: emergencyData.map((data) {
+                  items: globalEmergencyData.map((data) {
                     return DropdownMenuItem(
                       value: data,
                       child: Text(data['country']!),
@@ -69,11 +69,11 @@ class _EmergencyHelperScreenState extends State<EmergencyHelperScreen> {
             const SizedBox(height: 40),
             
             // Emergency Cards
-            _buildEmergencyCard("Police", selectedCountry['police']!, Icons.local_police, Colors.blue),
+            _buildEmergencyCard("Police", selectedCountry!['police']!, Icons.local_police, Colors.blue),
             const SizedBox(height: 15),
-            _buildEmergencyCard("Ambulance", selectedCountry['ambulance']!, Icons.medical_services, Colors.red),
+            _buildEmergencyCard("Ambulance", selectedCountry!['ambulance']!, Icons.medical_services, Colors.red),
             const SizedBox(height: 15),
-            _buildEmergencyCard("Fire Dept", selectedCountry['fire']!, Icons.local_fire_department, Colors.orange),
+            _buildEmergencyCard("Fire Dept", selectedCountry!['fire']!, Icons.local_fire_department, Colors.orange),
           ],
         ),
       ),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'history_helper.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:translator/translator.dart';
+import 'history_helper.dart'; // Make sure this matches your file name
 
 class VoiceTranslatorScreen extends StatefulWidget {
   const VoiceTranslatorScreen({super.key});
@@ -9,32 +12,83 @@ class VoiceTranslatorScreen extends StatefulWidget {
 }
 
 class _VoiceTranslatorScreenState extends State<VoiceTranslatorScreen> {
-  bool isListening = false;
-  String textInput = "Press the mic to start speaking...";
-  String translatedOutput = "";
+  // 1. Setup the Engines
+  late stt.SpeechToText _speech;
+  late FlutterTts _flutterTts;
+  final GoogleTranslator _translator = GoogleTranslator();
 
-  // Mock function to simulate listening and translating
-  void toggleListening() async {
+  bool _isListening = false;
+  String _textInput = "Press the mic and start speaking...";
+  String _translatedOutput = "";
+  String _selectedLocaleId = 'es-ES'; // Default to Spanish
+
+  // Language options for speaking
+  final Map<String, String> _languages = {
+    'Spanish': 'es-ES',
+    'French': 'fr-FR',
+    'German': 'de-DE',
+    'Chinese': 'zh-CN',
+    'Urdu': 'ur-PK',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _speech = stt.SpeechToText();
+    _flutterTts = FlutterTts();
+  }
+
+  // 2. The Listening Function
+  Future<void> _listen() async {
+    if (!_isListening) {
+      // Start Listening
+      bool available = await _speech.initialize();
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (val) async {
+            setState(() {
+              _textInput = val.recognizedWords;
+            });
+            
+            // If the user stops speaking (final result), translate it
+            if (val.hasConfidenceRating && val.confidence > 0) {
+               _translateAndSpeak(val.recognizedWords);
+            }
+          },
+        );
+      }
+    } else {
+      // Stop Listening
+      setState(() => _isListening = false);
+      _speech.stop();
+    }
+  }
+
+  // 3. The Translate & Speak Function
+  Future<void> _translateAndSpeak(String text) async {
+    if (text.isEmpty) return;
+
+    // Get the target language code (e.g., 'es' from 'es-ES')
+    String targetLang = _selectedLocaleId.split('-')[0];
+
+    // Translate
+    var translation = await _translator.translate(text, to: targetLang);
+    
     setState(() {
-      isListening = true;
-      textInput = "Listening...";
+      _translatedOutput = translation.text;
     });
 
-    // Simulate a 2-second delay for "listening"
-    await Future.delayed(const Duration(seconds: 2));
+    // Speak
+    await _flutterTts.setLanguage(_selectedLocaleId);
+    await _flutterTts.setPitch(1.0);
+    await _flutterTts.speak(translation.text);
 
-    if (!mounted) return;
-    setState(() {
-      isListening = false;
-      textInput = "Hello, how are you?"; // Simulated input
-      translatedOutput = "Hola, ¿cómo estás?"; // Simulated output
-      
-      // --- ADD THIS LINE ---
-      HistoryHelper.addToHistory(
-        "Voice Chat", 
-        "Spoke: '$textInput' -> Heard: '$translatedOutput'"
-      );
-    });
+    // Save to History
+    HistoryHelper.addToHistory(
+      "Voice Chat", 
+      "Spoke: '$text' -> Heard: '${translation.text}'"
+    );
   }
 
   @override
@@ -42,114 +96,79 @@ class _VoiceTranslatorScreenState extends State<VoiceTranslatorScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Voice Conversation')),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // --- TOP SECTION: What you said ---
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "You said:",
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      textInput,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ],
-                ),
-              ),
+            // Language Selector
+            DropdownButton<String>(
+              value: _languages.entries.firstWhere((e) => e.value == _selectedLocaleId).key,
+              items: _languages.keys.map((String key) {
+                return DropdownMenuItem<String>(
+                  value: key,
+                  child: Text(key),
+                );
+              }).toList(),
+              onChanged: (val) {
+                setState(() {
+                  _selectedLocaleId = _languages[val]!;
+                });
+              },
             ),
+            const SizedBox(height: 30),
             
-            const SizedBox(height: 20),
-
-            // --- MIDDLE SECTION: Microphone Button ---
-            GestureDetector(
-              onTap: toggleListening,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: 80,
-                width: 80,
-                decoration: BoxDecoration(
-                  color: isListening ? Colors.red : Colors.indigo,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isListening ? Colors.red : Colors.indigo).withOpacity(0.4),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  isListening ? Icons.stop : Icons.mic,
-                  color: Colors.white,
-                  size: 40,
-                ),
-              ),
+            // What you said
+            Text(
+              _textInput,
+              style: const TextStyle(fontSize: 20, color: Colors.black87),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 10),
-            Text(isListening ? "Listening..." : "Tap to Speak"),
-
             const SizedBox(height: 20),
-
-            // --- BOTTOM SECTION: Translated Result ---
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.indigo.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.indigo.withOpacity(0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Translation (Spanish):",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.volume_up, color: Colors.indigo),
-                          onPressed: () {
-                            // Placeholder for Text-to-Speech logic
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Playing audio... (Simulation)")),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      translatedOutput.isEmpty ? "..." : translatedOutput,
-                      style: const TextStyle(
-                        fontSize: 22, 
-                        fontWeight: FontWeight.bold,
-                        color: Colors.indigo,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            
+            // The Translation
+            Text(
+              _translatedOutput,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.indigo),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
+      // The Big Mic Button
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: AvatarGlow(
+        animate: _isListening,
+        glowColor: Colors.red,
+        endRadius: 75.0,
+        duration: const Duration(milliseconds: 2000),
+        repeat: true,
+        showTwoGlows: true,
+        child: FloatingActionButton(
+          onPressed: _listen,
+          backgroundColor: _isListening ? Colors.red : Colors.indigo,
+          child: Icon(_isListening ? Icons.mic : Icons.mic_none, size: 36),
+        ),
+      ),
+    );
+  }
+}
+
+// Simple Glow Animation Widget (If you don't have the package, we use a simple Container wrapper)
+class AvatarGlow extends StatelessWidget {
+  final bool animate;
+  final Widget child;
+  // Ignore other params for this simple version
+  const AvatarGlow({super.key, required this.animate, required this.child, required Color glowColor, required double endRadius, required Duration duration, required bool repeat, required bool showTwoGlows});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: animate ? BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: Colors.red.withOpacity(0.5), blurRadius: 20, spreadRadius: 5)
+        ]
+      ) : null,
+      child: child,
     );
   }
 }

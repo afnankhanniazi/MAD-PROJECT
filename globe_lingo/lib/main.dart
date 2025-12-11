@@ -8,6 +8,9 @@ import 'world_time.dart';
 import 'history_screen.dart';
 import 'currency_converter.dart';
 import 'emergency_helper.dart';
+import 'user_feedback.dart';
+import 'admin_dashboard.dart';
+import 'package:translator/translator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -206,31 +209,62 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       return;
     }
-
     setState(() => isLoading = true);
 
     try {
       if (isLogin) {
+        // --- 1. BAN CHECK (NEW) ---
+        // Check if this email is in the 'banned_users' list
+        final banCheck = await FirebaseFirestore.instance
+            .collection('banned_users')
+            .where('email', isEqualTo: email)
+            .get();
+
+        if (banCheck.docs.isNotEmpty) {
+          throw FirebaseAuthException(
+            code: 'user-banned', 
+            message: 'Access Denied: Your account has been suspended.'
+          );
+        }
+        // ---------------------------
+
+        // 2. Perform Login
         await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
-        
-        // --- ADD THIS LINE ---
-        await HistoryHelper.addToHistory("Login", "User logged in successfully"); 
-        
+        await HistoryHelper.addToHistory("Login", "User logged in successfully");
+
+        // --- 3. ADMIN CHECK (NEW) ---
+        if (email == "admin@admin.com") {
+           if (mounted) {
+             Navigator.pushReplacement(
+               context, 
+               MaterialPageRoute(builder: (context) => const AdminDashboard())
+             );
+           }
+        } else {
+           if (mounted) {
+             Navigator.pushReplacement(
+               context, 
+               MaterialPageRoute(builder: (context) => const HomePage())
+             );
+           }
+        }
+        // ----------------------------
+
       } else {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password); 
-        // --- ADD THIS LINE ---
+        // Sign Up Logic (Stays the same)
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
         await HistoryHelper.addToHistory("New Account", "User created a new account");
+        
+        // Navigate to Home after sign up
+        if (mounted) {
+          Navigator.pushReplacement(
+            context, 
+            MaterialPageRoute(builder: (context) => const HomePage())
+          );
+        }
       }
-      // ... navigation code ...
-      
-      // If successful, navigate to Home
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
-      }
-    } on FirebaseAuthException catch (e) {
+    
+ on FirebaseAuthException catch (e) {
       // Show error message (like "Wrong password" or "Email in use")
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -418,6 +452,8 @@ class HomePage extends StatelessWidget {
                       _buildMenuCard(context, "Emergency", Icons.health_and_safety, Colors.redAccent, const EmergencyHelperScreen()),
 
                       _buildMenuCard(context, "History", Icons.history, Colors.blue, const HistoryScreen()),
+
+                      _buildMenuCard(context, "Support", Icons.feedback, Colors.pink, const UserFeedbackScreen()),
                     ],
                   ),
                 ),
@@ -494,22 +530,41 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   };
 
   Future<void> translateText() async {
+    // 1. Check if there is text to translate
     if (inputController.text.isEmpty) return;
-    setState(() => isLoading = true);
-    
-    // Simulate delay
-    await Future.delayed(const Duration(seconds: 1)); 
-    
+
     setState(() {
-      translatedText = "Translated: ${inputController.text} (Simulation)"; // Or your real logic
-      isLoading = false;
-      
-      // --- ADD THIS LINE ---
-      HistoryHelper.addToHistory(
-        "Translation ($selectedLanguage)", 
-        "${inputController.text} -> $translatedText"
-      );
+      isLoading = true;
+      translatedText = "Translating..."; 
     });
+
+    try {
+      // 2. Use the Google Translator
+      final translator = GoogleTranslator();
+
+      // 3. Translate from Auto-Detect to the Selected Language
+      final translation = await translator.translate(
+        inputController.text, 
+        to: selectedLanguage 
+      );
+      // 4. Update the screen and Save to History
+      setState(() {
+        translatedText = translation.text;
+        isLoading = false;
+        
+        // Save to your database
+        HistoryHelper.addToHistory(
+          "Translation ($selectedLanguage)", 
+          "${inputController.text} -> $translatedText"
+        );
+      });
+
+    } catch (e) {
+      setState(() {
+        translatedText = "Error: Check internet connection.";
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -533,7 +588,7 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: selectedLanguage,
+                    initialValue: selectedLanguage,
                     decoration: const InputDecoration(
                       labelText: 'Select Language',
                       border: OutlineInputBorder(),

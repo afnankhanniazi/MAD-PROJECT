@@ -85,7 +85,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              value: fromCurrency,
+                              initialValue: fromCurrency,
                               decoration: const InputDecoration(labelText: 'From', border: OutlineInputBorder()),
                               items: exchangeRates.keys.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
                               onChanged: (v) { setState(() { fromCurrency = v!; convertCurrency(); }); },
@@ -96,7 +96,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              value: toCurrency,
+                              initialValue: toCurrency,
                               decoration: const InputDecoration(labelText: 'To', border: OutlineInputBorder()),
                               items: exchangeRates.keys.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
                               onChanged: (v) { setState(() { toCurrency = v!; convertCurrency(); }); },
@@ -110,7 +110,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                         result,
                         style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.indigo),
                       ),
-                      Text("$toCurrency", style: const TextStyle(fontSize: 18, color: Colors.indigo)),
+                      Text(toCurrency, style: const TextStyle(fontSize: 18, color: Colors.indigo)),
                     ],
                   ),
                 ),
