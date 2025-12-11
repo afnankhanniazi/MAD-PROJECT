@@ -12,6 +12,7 @@ import 'user_feedback.dart';
 import 'admin_dashboard.dart';
 import 'package:translator/translator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -211,9 +212,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() => isLoading = true);
 
-    try {
+try {
       if (isLogin) {
-        // --- 1. BAN CHECK (NEW) ---
+        // --- 1. BAN CHECK (SIMPLIFIED) ---
         // Check if this email is in the 'banned_users' list
         final banCheck = await FirebaseFirestore.instance
             .collection('banned_users')
@@ -221,18 +222,25 @@ class _LoginScreenState extends State<LoginScreen> {
             .get();
 
         if (banCheck.docs.isNotEmpty) {
-          throw FirebaseAuthException(
-            code: 'user-banned', 
-            message: 'Access Denied: Your account has been suspended.'
-          );
+          // STOP EVERYTHING HERE if banned
+          if (mounted) {
+            setState(() => isLoading = false); // Stop the spinner
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Access Denied: Your account has been suspended.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return; // <--- This exits the function immediately so they can't login
         }
         // ---------------------------
 
-        // 2. Perform Login
+        // 2. Perform Login (If not banned)
         await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
         await HistoryHelper.addToHistory("Login", "User logged in successfully");
 
-        // --- 3. ADMIN CHECK (NEW) ---
+        // --- 3. ADMIN CHECK ---
         if (email == "admin@admin.com") {
            if (mounted) {
              Navigator.pushReplacement(
@@ -248,14 +256,12 @@ class _LoginScreenState extends State<LoginScreen> {
              );
            }
         }
-        // ----------------------------
 
       } else {
         // Sign Up Logic (Stays the same)
         await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password);
         await HistoryHelper.addToHistory("New Account", "User created a new account");
         
-        // Navigate to Home after sign up
         if (mounted) {
           Navigator.pushReplacement(
             context, 
@@ -263,8 +269,8 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       }
-    
- on FirebaseAuthException catch (e) {
+    }
+       on FirebaseAuthException catch (e) {
       // Show error message (like "Wrong password" or "Email in use")
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -285,63 +291,65 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(title: Text(isLogin ? 'Login' : 'Sign Up')),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.language, size: 80, color: Colors.indigo),
-            const SizedBox(height: 32),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
-              ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : handleAuth,
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+        child: SingleChildScrollView (
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.language, size: 80, color: Colors.indigo),
+              const SizedBox(height: 32),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
                 ),
-                child: isLoading 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Text(
-                      isLogin ? 'Login' : 'Sign Up',
-                      style: const TextStyle(fontSize: 16),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : handleAuth,
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                  ),
+                  child: isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        isLogin ? 'Login' : 'Sign Up',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: isLoading ? null : () {
-                setState(() {
-                  isLogin = !isLogin;
-                });
-              },
-              child: Text(
-                isLogin
-                    ? "Don't have an account? Sign Up"
-                    : "Already have an account? Login",
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: isLoading ? null : () {
+                  setState(() {
+                    isLogin = !isLogin;
+                  });
+                },
+                child: Text(
+                  isLogin
+                      ? "Don't have an account? Sign Up"
+                      : "Already have an account? Login",
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

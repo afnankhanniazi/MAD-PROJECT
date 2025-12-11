@@ -42,6 +42,7 @@ class AdminDashboard extends StatelessWidget {
 }
 
 // --- TAB 1: ANALYTICS (STATS) ---
+// --- TAB 1: ANALYTICS (FIXED: HIDDEN ADMIN) ---
 class AnalyticsTab extends StatelessWidget {
   const AnalyticsTab({super.key});
 
@@ -54,11 +55,17 @@ class AnalyticsTab extends StatelessWidget {
         
         var docs = snapshot.data!.docs;
         
-        // Calculate Stats
-        int totalActions = docs.length;
-        int translations = docs.where((d) => d['action'].toString().contains('Translation')).length;
-        int voiceChats = docs.where((d) => d['action'].toString().contains('Voice')).length;
-        int users = docs.map((d) => d['userEmail'].toString()).toSet().length;
+        // 1. FILTER OUT ADMIN FROM DATA
+        // We make a list of all docs where the email is NOT admin@admin.com
+        var userDocs = docs.where((d) => d['userEmail'] != "admin@admin.com").toList();
+
+        // 2. CALCULATE STATS BASED ON USER DOCS ONLY
+        int totalActions = userDocs.length;
+        int translations = userDocs.where((d) => d['action'].toString().contains('Translation')).length;
+        int voiceChats = userDocs.where((d) => d['action'].toString().contains('Voice')).length;
+        
+        // Count unique emails (excluding admin)
+        int users = userDocs.map((d) => d['userEmail'].toString()).toSet().length;
 
         return Padding(
           padding: const EdgeInsets.all(20),
