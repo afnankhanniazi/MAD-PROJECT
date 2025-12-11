@@ -1,15 +1,14 @@
-import 'package:firebase_core/firebase_core.dart'; // <--- New Import
+import 'package:firebase_core/firebase_core.dart';
+import 'history_helper.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'country_guide.dart';
 import 'voice_translator.dart';
 import 'world_time.dart';
+import 'history_screen.dart';
 import 'currency_converter.dart';
 import 'emergency_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-// ... imports
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -212,18 +211,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (isLogin) {
-        // Log in existing user
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+        await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
+        
+        // --- ADD THIS LINE ---
+        await HistoryHelper.addToHistory("Login", "User logged in successfully"); 
+        
       } else {
-        // Create new user
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password); 
+        // --- ADD THIS LINE ---
+        await HistoryHelper.addToHistory("New Account", "User created a new account");
       }
+      // ... navigation code ...
       
       // If successful, navigate to Home
       if (mounted) {
@@ -418,6 +416,8 @@ class HomePage extends StatelessWidget {
                       
                       // 6. EMERGENCY HELPER (New Unique Feature!)
                       _buildMenuCard(context, "Emergency", Icons.health_and_safety, Colors.redAccent, const EmergencyHelperScreen()),
+
+                      _buildMenuCard(context, "History", Icons.history, Colors.blue, const HistoryScreen()),
                     ],
                   ),
                 ),
@@ -496,10 +496,19 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
   Future<void> translateText() async {
     if (inputController.text.isEmpty) return;
     setState(() => isLoading = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulating
+    
+    // Simulate delay
+    await Future.delayed(const Duration(seconds: 1)); 
+    
     setState(() {
-      translatedText = "Translated: ${inputController.text} (Simulation)";
+      translatedText = "Translated: ${inputController.text} (Simulation)"; // Or your real logic
       isLoading = false;
+      
+      // --- ADD THIS LINE ---
+      HistoryHelper.addToHistory(
+        "Translation ($selectedLanguage)", 
+        "${inputController.text} -> $translatedText"
+      );
     });
   }
 
@@ -571,11 +580,3 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
 // --- KEEP THESE EXISTING SCREENS (Do not delete them if they are below) ---
 // If you deleted HistoryScreen or TimeAndCurrencyScreen, paste them back here.
 // I will include brief versions just in case you deleted too much.
-
-class HistoryScreen extends StatelessWidget {
-  const HistoryScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar(title: const Text("History")), body: const Center(child: Text("History List")));
-  }
-}

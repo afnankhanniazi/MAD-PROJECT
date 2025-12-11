@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'history_helper.dart';
 
 class VoiceTranslatorScreen extends StatefulWidget {
   const VoiceTranslatorScreen({super.key});
@@ -23,11 +24,16 @@ class _VoiceTranslatorScreenState extends State<VoiceTranslatorScreen> {
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
-
     setState(() {
       isListening = false;
-      textInput = "Hello, how are you?"; // Simulated voice input
-      translatedOutput = "Hola, ¿cómo estás?"; // Simulated translation
+      textInput = "Hello, how are you?"; // Simulated input
+      translatedOutput = "Hola, ¿cómo estás?"; // Simulated output
+      
+      // --- ADD THIS LINE ---
+      HistoryHelper.addToHistory(
+        "Voice Chat", 
+        "Spoke: '$textInput' -> Heard: '$translatedOutput'"
+      );
     });
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'history_helper.dart';
 
 class CurrencyScreen extends StatefulWidget {
   const CurrencyScreen({super.key});
@@ -34,8 +35,27 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Currency Converter')),
+      return Scaffold(
+      appBar: AppBar(
+        title: const Text('Currency Converter'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            onPressed: () {
+              HistoryHelper.addToHistory(
+                "Currency Conversion", 
+                "$amount $fromCurrency = $result $toCurrency"
+              );
+              
+              // Show a little "Saved" popup
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Conversion saved to History!")),
+              );
+            },
+          ),
+        ],
+      ),
+      // ... rest of the body code ...
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
